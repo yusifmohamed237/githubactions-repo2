@@ -1,0 +1,52 @@
+name: Build and Package Pipeline
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: tiny-health-app
+  IMAGE_TAR: tiny-health-app.tar
+  ARTIFACT_NAME: tiny-health-app-image
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run Tests Before Build
+        run: python -m unittest discover -s tests -v
+
+      - name: Generate Image Tag
+        id: tag
+        run: |
+          TODAY="$(date -u +%Y-%m-%d)"
+          IMAGE_TAG="${TODAY}-${GITHUB_RUN_ID}"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t "${IMAGE_NAME}:${{ steps.tag.outputs.image_tag }}" \
+            .
+
+      - name: Save Image as Tar
+        run: docker save "${IMAGE_NAME}:${{ steps.tag.outputs.image_tag }}" -o "${IMAGE_TAR}"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.IMAGE_TAR }}
+          retention-days: 7

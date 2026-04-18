@@ -1,0 +1,30 @@
+name: PR Validation Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+  workflow_dispatch:
+
+jobs:
+  pr-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Simulate long CI (for demo)
+        run: |
+          echo "CI is running... please wait"
+          sleep 60   
+
+      - name: Run Unit Tests
+        run: python -m unittest discover -s tests -v
