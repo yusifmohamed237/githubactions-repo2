@@ -1,6 +1,6 @@
 # This workflow completes the story by delivering the saved package.
 # It starts after the build workflow finishes successfully.
-name: 04 Deploy Workflow
+name: 04 Deploy Workflow-ex
 
 on:
   workflow_run:
