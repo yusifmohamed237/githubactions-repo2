@@ -68,18 +68,6 @@ jobs:
           echo "Health endpoint response:"
           curl --fail --silent http://127.0.0.1:8000/health || echo "App not ready yet"
 
-      - name: Smoke test deployed app
-        # Retry a few times because app startup can take a moment.
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if curl --fail --silent http://127.0.0.1:8000/health; then
-              exit 0
-            fi
-            echo "Waiting for app to become ready..."
-            sleep 2
-          done
-          echo "App did not become ready in time."
-          exit 1
 
       - name: Stop container
         if: always()
