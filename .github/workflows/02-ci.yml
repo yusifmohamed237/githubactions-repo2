@@ -31,3 +31,13 @@ jobs:
       - name: Run tests
         # This is the key verification step in the CI workflow.
         run: python -m unittest discover -s tests -v
+
+      - name: Run Trivy vulnerability scanner
+        # Scan the code repository for security vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-path: "."
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
