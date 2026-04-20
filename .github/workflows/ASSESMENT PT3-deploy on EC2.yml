@@ -1,0 +1,59 @@
+name: ASSESMENT PT.3-Deploy Workflow-ex
+
+on:
+  workflow_run:
+    workflows: ["ASSESMENT PT.2-Build and Package Pipeline after merge"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  deploy-to-ec2:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get build information
+        id: build-info
+        run: |
+          BUILD_RUN_ID="${{ github.event.workflow_run.id }}"
+          BUILD_DATE="$(echo "${{ github.event.workflow_run.created_at }}" | cut -dT -f1)"
+          IMAGE_TAG="${BUILD_DATE}-${BUILD_RUN_ID}"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.YUSIFKEY }}
+          port: 22
+          script: |
+            # Login to ECR
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            
+            # Pull the image
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:${{ steps.build-info.outputs.image_tag }}
+            
+            # Stop and remove old container
+            docker stop tiny-health-container || true
+            docker rm tiny-health-container || true
+            
+            # Run new container
+            docker run -d \
+              --name tiny-health-container \
+              -p 8000:8000 \
+              ${{ secrets.ECR_REPOSITORY_URI }}:${{ steps.build-info.outputs.image_tag }}
+            
+            # Check if running
+            sleep 3
+            curl --fail --silent http://localhost:8000/health || exit 1
