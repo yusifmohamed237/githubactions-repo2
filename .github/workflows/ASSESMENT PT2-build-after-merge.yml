@@ -1,4 +1,4 @@
-name: C 
+name: ASSESMENT PT.2-Build and Package Pipeline after merge
 
 on:
   workflow_dispatch:
