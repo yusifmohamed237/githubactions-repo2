@@ -1,6 +1,6 @@
 # GitHub Actions CI/CD Course for Beginners
 
-## What This Repository Is For
+## What This Repository Is For:
 
 This is the student repository for a 2-day beginner-friendly CI/CD course.
 
